@@ -13,18 +13,10 @@ volatile int8_t gi8CanTxOK = 1;
 #define TXBUFSIZE           512 /* RX buffer size */
 #define TXIDXMASK           (TXBUFSIZE - 1)
 
-#ifdef __ICCARM__
-#pragma data_alignment=4
-STR_CANMSG_T comRbuf[RXBUFSIZE];
-STR_CANMSG_T comTbuf[TXBUFSIZE];
-uint8_t gRxBuf[64] = {0};
-uint8_t gUsbRxBuf[64] = {0};
-#else
 STR_CANMSG_T comRbuf[RXBUFSIZE] __attribute__((aligned(4)));
 STR_CANMSG_T comTbuf[TXBUFSIZE]__attribute__((aligned(4)));
 uint8_t gRxBuf[64] __attribute__((aligned(4))) = {0};
 uint8_t gUsbRxBuf[64] __attribute__((aligned(4))) = {0};
-#endif
 
 volatile uint16_t comRbytes = 0;
 volatile uint16_t comRhead = 0;
@@ -34,37 +26,8 @@ volatile uint16_t comTbytes = 0;
 volatile uint16_t comThead = 0;
 volatile uint16_t comTtail = 0;
 
-#define CAN_printf print_to_VCOM
-
-// https://www.cnblogs.com/jiangzhaowei/p/8982172.html
-#include <stdarg.h>
-#include <string.h>
 
 extern uint32_t gu32TxSize; // vcom_serial.h
-
-void print_to_VCOM(const char *pFmt, ...)
-{
-    char str[128];
-    uint8_t u8Len, i;
-    va_list args;
-    va_start(args, pFmt);
-    u8Len = (uint8_t)vsnprintf(str, 128, pFmt, args);
-    va_end(args);
-
-    while ((HSUSBD->EP[EPA].EPINTSTS & HSUSBD_EPINTSTS_BUFEMPTYIF_Msk) == 0);
-
-    if (u8Len > 0) {
-        gu32TxSize = u8Len;
-
-        for (i = 0; i < u8Len; i++) {
-            HSUSBD->EP[EPA].EPDAT_BYTE = str[i];
-        }
-
-        HSUSBD->EP[EPA].EPRSPCTL = HSUSBD_EP_RSPCTL_SHORTTXEN;    // packet end
-        HSUSBD->EP[EPA].EPTXCNT = u8Len;
-        HSUSBD_ENABLE_EP_INT(EPA, HSUSBD_EPINTEN_INTKIEN_Msk);
-    }
-}
 
 extern volatile int8_t gi8BulkOutReady;
 
@@ -106,14 +69,21 @@ void CAN_STOP(void)
 
 void CAN_ShowMsg(STR_CANMSG_T *Msg)
 {
-    uint8_t i;
-    CAN_printf("Read ID=%8X, Type=%s, DLC=%d,Data=", Msg->Id, Msg->IdType ? "EXT" : "STD", Msg->DLC);
+    uint8_t u8Len, i;
+    char *data  = (char *)Msg;
 
-    for (i = 0; i < Msg->DLC; i++) {
-        CAN_printf("%02X,", Msg->Data[i]);
+    while ((HSUSBD->EP[EPA].EPINTSTS & HSUSBD_EPINTSTS_BUFEMPTYIF_Msk) == 0);
+
+    u8Len = sizeof(STR_CANMSG_T);
+    gu32TxSize = u8Len;
+
+    for (i = 0; i < u8Len; i++) {
+        HSUSBD->EP[EPA].EPDAT_BYTE = data[i];
     }
 
-    CAN_printf("\r\n");
+    HSUSBD->EP[EPA].EPRSPCTL = HSUSBD_EP_RSPCTL_SHORTTXEN;    // packet end
+    HSUSBD->EP[EPA].EPTXCNT = u8Len;
+    HSUSBD_ENABLE_EP_INT(EPA, HSUSBD_EPINTEN_INTKIEN_Msk);
 }
 
 typedef void (*CAN_FUNC)(void);
@@ -268,17 +238,10 @@ void CAN_ProcessCommand(void)
         u32BaudRate = inpw(gUsbRxBuf + 4);
         u32Mode = inpw(gUsbRxBuf + 8);
         CAN_Bridge_Init(u32BaudRate, u32Mode);
-        CAN_printf("\r\n -- u32BaudRate, u32Mode = %d, %d --\r\n", u32BaudRate, u32Mode);
 
         if (u32Mode == CAN_NORMAL_MODE) {
-            uint32_t u32ID[4];
-            u32ID[0] = inpw(gUsbRxBuf + 12);
-            u32ID[1] = inpw(gUsbRxBuf + 16);
-            u32ID[2] = inpw(gUsbRxBuf + 20);
-            u32ID[3] = inpw(gUsbRxBuf + 24);
             CAN_Bridge_SetRxMsg(CAN_STD_ID, (uint32_t *)(gUsbRxBuf + 12));
             CAN_Bridge_SetRxMsg(CAN_EXT_ID, (uint32_t *)(gUsbRxBuf + 20));
-            CAN_printf("\r\n -- CAN_ID = (%3X, %3X) - (%8X, %8X) --\r\n", u32ID[0], u32ID[1], u32ID[2], u32ID[3]);
         }
 
         gi8CanTxOK = 1;
@@ -353,7 +316,6 @@ int main()
     gi8BulkOutReady = 0;
 
     if ((comTbytes == 0) && (gi8CanCmdReady == 0)) {
-        CAN_printf("\r\n--- CAN Silent Mode Demo ---\r\n");
         CAN_Bridge_Init(500000, CAN_BASIC_MODE);
     }
 
