@@ -10,7 +10,7 @@
       <TargetName>CAN_Bridge</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
+      <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -47,7 +47,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\obj\</OutputDirectory>
-          <OutputName>NL2_CAN_Bridge</OutputName>
+          <OutputName>NuLink2_CAN_Bridge</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>0</CreateHexFile>
@@ -452,24 +452,19 @@
           <GroupName>User</GroupName>
           <Files>
             <File>
-              <FileName>main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\CAN_Bridge\main.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>VCOM_Serial</GroupName>
-          <Files>
-            <File>
               <FileName>descriptors.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\HSUSBD_VCOM_SerialEmulator\descriptors.c</FilePath>
+              <FilePath>..\descriptors.c</FilePath>
+            </File>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\main.c</FilePath>
             </File>
             <File>
               <FileName>vcom_serial.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\HSUSBD_VCOM_SerialEmulator\vcom_serial.c</FilePath>
+              <FilePath>..\vcom_serial.c</FilePath>
             </File>
           </Files>
         </Group>
