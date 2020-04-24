@@ -233,18 +233,18 @@ uint8_t gu8OtherConfigDescriptorHS[] __attribute__((aligned(4))) = {
     EP_BULK,                        /* bmAttributes     */
     /* wMaxPacketSize */
     EPA_OTHER_MAX_PKT_SIZE & 0x00FF,
-    (EPA_OTHER_MAX_PKT_SIZE & 0xFF00) >> 8,
-                                      0x00,                           /* bInterval        */
+    ((EPA_OTHER_MAX_PKT_SIZE & 0xFF00) >> 8),
+    0x00,                           /* bInterval        */
 
-                                      /* ENDPOINT descriptor */
-                                      LEN_ENDPOINT,                   /* bLength          */
-                                      DESC_ENDPOINT,                  /* bDescriptorType  */
-                                      (EP_OUTPUT | BULK_OUT_EP_NUM),  /* bEndpointAddress */
-                                      EP_BULK,                        /* bmAttributes     */
-                                      /* wMaxPacketSize */
-                                      EPB_OTHER_MAX_PKT_SIZE & 0x00FF,
-                                      (EPB_OTHER_MAX_PKT_SIZE & 0xFF00) >> 8,
-                                      0x00,                           /* bInterval        */
+    /* ENDPOINT descriptor */
+    LEN_ENDPOINT,                   /* bLength          */
+    DESC_ENDPOINT,                  /* bDescriptorType  */
+    (EP_OUTPUT | BULK_OUT_EP_NUM),  /* bEndpointAddress */
+    EP_BULK,                        /* bmAttributes     */
+    /* wMaxPacketSize */
+    EPB_OTHER_MAX_PKT_SIZE & 0x00FF,
+    ((EPB_OTHER_MAX_PKT_SIZE & 0xFF00) >> 8),
+    0x00,                           /* bInterval        */
 };
 
 #ifdef __ICCARM__

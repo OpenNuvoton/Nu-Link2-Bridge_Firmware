@@ -365,33 +365,16 @@ void VCOM_Init(void)
     HSUSBD_ENABLE_CEP_INT(HSUSBD_CEPINTEN_SETUPPKIEN_Msk | HSUSBD_CEPINTEN_STSDONEIEN_Msk);
     VCOM_InitForHighSpeed();
 }
-#define LOG_CDC_CMD (0)
-#if (LOG_CDC_CMD)
-volatile S_HSUSBD_CMD_T vcomRbuf[256] __attribute__((aligned(4)));
-volatile uint16_t vcomRbytes = 0;
-volatile uint8_t vcomRhead = 0;
-volatile uint8_t vcomRtail = 0;
-#endif
+
 
 void VCOM_ClassRequest(void)
 {
-#if (LOG_CDC_CMD)
-    memcpy(&vcomRbuf[vcomRtail], &gUsbCmd, sizeof(S_HSUSBD_CMD_T));
-    vcomRtail++;
-    vcomRbytes++;
-#endif
-
     if (gUsbCmd.bmRequestType & 0x80) { /* request data transfer direction */
         // Device to host
         switch (gUsbCmd.bRequest) {
             case GET_LINE_CODE: {
                 if ((gUsbCmd.wIndex & 0xff) == 0) { /* VCOM-1 */
                     HSUSBD_PrepareCtrlIn((uint8_t *)&gLineCoding, 7);
-#if (LOG_CDC_CMD)
-                    memcpy(&vcomRbuf[vcomRtail], &gLineCoding, 7);
-                    vcomRtail++;
-                    vcomRbytes++;
-#endif
                 }
 
                 HSUSBD_CLR_CEP_INT_FLAG(HSUSBD_CEPINTSTS_INTKIF_Msk);
@@ -412,11 +395,6 @@ void VCOM_ClassRequest(void)
                 if ((gUsbCmd.wIndex & 0xff) == 0) { /* VCOM-1 */
                     gCtrlSignal = gUsbCmd.wValue;
                     //printf("RTS=%d  DTR=%d\n", (gCtrlSignal0 >> 1) & 1, gCtrlSignal0 & 1);
-#if (LOG_CDC_CMD)
-                    memcpy(&vcomRbuf[vcomRtail], &gCtrlSignal, 2);
-                    vcomRtail++;
-                    vcomRbytes++;
-#endif
                 }
 
                 // DATA IN for end of setup
@@ -430,11 +408,6 @@ void VCOM_ClassRequest(void)
             case SET_LINE_CODE: {
                 if ((gUsbCmd.wIndex & 0xff) == 0) { /* VCOM-1 */
                     HSUSBD_CtrlOut((uint8_t *)&gLineCoding, 7);
-#if (LOG_CDC_CMD)
-                    memcpy(&vcomRbuf[vcomRtail], &gLineCoding, 7);
-                    vcomRtail++;
-                    vcomRbytes++;
-#endif
                 }
 
                 /* Status stage */

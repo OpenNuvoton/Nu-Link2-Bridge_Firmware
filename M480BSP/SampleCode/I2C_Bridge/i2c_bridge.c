@@ -239,7 +239,6 @@ static uint16_t u16rwLen;
 void VCOM_TransferData(void)
 {
     // MonitorCdcState();
-
     if (monRshorts) {
         uint8_t ch;
         uint16_t _monRshorts = monRshorts, i, data;
