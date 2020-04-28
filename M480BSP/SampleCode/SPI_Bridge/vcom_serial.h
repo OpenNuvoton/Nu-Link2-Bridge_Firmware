@@ -90,8 +90,6 @@ void EPB_Handler(void);
 void VCOM_LineCoding(uint8_t port);
 void VCOM_TransferData(void);
 
-void VCOM_printf(const char *pFmt, ...);
-
 
 #endif  /* __USBD_CDC_H_ */
 

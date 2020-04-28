@@ -29,37 +29,8 @@ __STATIC_INLINE void VCOM_BulkOut(void)
     HSUSBD_CLR_EP_INT_FLAG(EPB, IrqSt);
 }
 
-#include <stdarg.h>
-#include <string.h>
-
-#define STRBUFSIZE           512
-char str[STRBUFSIZE];
-
-void VCOM_printf(const char *pFmt, ...)
-{
-    uint8_t u8Len, i;
-    va_list args;
-    va_start(args, pFmt);
-    u8Len = (uint8_t)vsnprintf(str, STRBUFSIZE, pFmt, args);
-    va_end(args);
-
-    while ((HSUSBD->EP[EPA].EPINTSTS & HSUSBD_EPINTSTS_BUFEMPTYIF_Msk) == 0);
-
-    if (u8Len > 0) {
-        gu32TxSize = u8Len;
-
-        for (i = 0; i < u8Len; i++) {
-            HSUSBD->EP[EPA].EPDAT_BYTE = str[i];
-        }
-
-        HSUSBD->EP[EPA].EPRSPCTL = HSUSBD_EP_RSPCTL_SHORTTXEN;    // packet end
-        HSUSBD->EP[EPA].EPTXCNT = u8Len;
-        HSUSBD_ENABLE_EP_INT(EPA, HSUSBD_EPINTEN_TXPKIEN_Msk);
-    }
-}
-void USBD20_IRQHandler(void)
-
 /*--------------------------------------------------------------------------*/
+void USBD20_IRQHandler(void)
 {
     __IO uint32_t IrqStL, IrqSt;
     IrqStL = HSUSBD->GINTSTS & HSUSBD->GINTEN;    /* get interrupt status */

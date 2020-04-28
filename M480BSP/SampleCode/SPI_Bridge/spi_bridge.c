@@ -280,22 +280,31 @@ void SPI1_Monitor(void)
 
 void VCOM_TransferData(void)
 {
-    if (monRshorts) {
-        uint16_t _monRshorts = monRshorts, i, data;
+    int32_t i, i32Len;
 
-        for (i = 0; i < _monRshorts; i++) {
-            if ((monRhead & 0x0F) == 0) {
-                printf("\n(SPI) ");
-            }
+    /* Check if any data to send to USB & USB is ready to send them out */
+    if (monRshorts && (gu32TxSize == 0)) {
+        uint16_t u16Data;
+        i32Len = monRshorts * 2;
 
-            data = monRbuf[monRhead++];
-            printf("%04X ", data);
+        if (i32Len > (HSUSBD->EP[EPA].EPMPS & HSUSBD_EPMPS_EPMPS_Msk)) {
+            i32Len = (HSUSBD->EP[EPA].EPMPS & HSUSBD_EPMPS_EPMPS_Msk);
+        }
+
+        for (i = 0; i < i32Len; i += 2) {
+            u16Data = monRbuf[monRhead++];
+            HSUSBD->EP[EPA].EPDAT_BYTE = (u16Data >> 8);
+            HSUSBD->EP[EPA].EPDAT_BYTE = (u16Data & 0x00FF);
             monRhead &= MONBUFMASK;
         }
 
         __set_PRIMASK(1);
-        monRshorts -= _monRshorts;
+        monRshorts -= (i32Len >> 1);
         __set_PRIMASK(0);
+        gu32TxSize = i32Len;
+        HSUSBD->EP[EPA].EPRSPCTL = HSUSBD_EP_RSPCTL_SHORTTXEN;    // packet end
+        HSUSBD->EP[EPA].EPTXCNT = i32Len;
+        HSUSBD_ENABLE_EP_INT(EPA, HSUSBD_EPINTEN_TXPKIEN_Msk);
     } else if (comTbytes && ((gCtrlSignal & 0x03) == 0x01)) {
         uint16_t i = 0, j = 0;
         SPI1->SSCTL |= SPI_SSCTL_SS_Msk;
@@ -323,15 +332,24 @@ void VCOM_TransferData(void)
         comTtail = 0; //reset index
         NVIC_EnableIRQ(USBD20_IRQn);
 
-        if (comRbytes) {
-            uint16_t i = 0;
-            printf("\r\n");
+        while (comRbytes && (comTbytes == 0)) {
+            while ((HSUSBD->EP[EPA].EPINTSTS & HSUSBD_EPINTSTS_BUFEMPTYIF_Msk) == 0);
 
-            for (i = 0; i < comRbytes; i++) {
-                printf("%02X ", comRbuf[i]);
+            i32Len = comRbytes;
+
+            if (i32Len > (HSUSBD->EP[EPA].EPMPS & HSUSBD_EPMPS_EPMPS_Msk)) {
+                i32Len = (HSUSBD->EP[EPA].EPMPS & HSUSBD_EPMPS_EPMPS_Msk);
             }
 
-            comRbytes = 0;
+            for (i = 0; i < i32Len; i++) {
+                HSUSBD->EP[EPA].EPDAT_BYTE = comRbuf[i];
+            }
+
+            gu32TxSize = i32Len;
+            HSUSBD->EP[EPA].EPRSPCTL = HSUSBD_EP_RSPCTL_SHORTTXEN;    // packet end
+            HSUSBD->EP[EPA].EPTXCNT = i32Len;
+            HSUSBD_ENABLE_EP_INT(EPA, HSUSBD_EPINTEN_TXPKIEN_Msk);
+            comRbytes -= i32Len;
         }
     }
 }

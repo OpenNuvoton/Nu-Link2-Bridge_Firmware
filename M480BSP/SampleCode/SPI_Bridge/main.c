@@ -10,6 +10,7 @@
 #include "vcom_serial.h"
 #include "hal_sys_init.h"
 
+// Error: L6218E: Undefined symbol CLK_GetPLLClockFreq (referred from system_m480.o).
 __weak uint32_t CLK_GetPLLClockFreq(void)
 {
     return FREQ_192MHZ;
